@@ -19,7 +19,7 @@ public class Test {
         Index5 index = new Index5();
         //|**  change it to your collection directory 
         //|**  in windows "C:\\tmp11\\rl\\collection\\"       
-        String files = "/home/ehab/tmp11/rl/collection/";
+        String files = "Material/tmp11/rl/collection/";
 
         File file = new File(files);
         //|** String[] 	list()
@@ -46,7 +46,11 @@ public class Test {
             BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
             phrase = in.readLine();
 /// -3- **** complete here ****
-        } while (!phrase.isEmpty());
+            if (!phrase.isEmpty()) {
+            System.out.println("Boolean Model result = \n" + index.find_24_01(phrase));
+        }
+        } 
+        while (!phrase.isEmpty());
 
     }
 }

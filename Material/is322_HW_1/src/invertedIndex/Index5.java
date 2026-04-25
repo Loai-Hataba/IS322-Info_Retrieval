@@ -46,9 +46,10 @@ public class Index5 {
         // Iterator<Integer> it2 = hset.iterator();
         System.out.print("[");
         while (p != null) {
-            /// -4- **** complete here ****
-            // fix get rid of the last comma
-            System.out.print("" + p.docId + "," );
+            System.out.print(p.docId);
+            if (p.next != null) {
+                System.out.print(",");  // comma only between elements
+            }
             p = p.next;
         }
         System.out.println("]");
@@ -80,6 +81,7 @@ public class Index5 {
                 while ((ln = file.readLine()) != null) {
                     /// -2- **** complete here ****
                     ///**** hint   flen +=  ________________(ln, fid);
+                    flen += indexOneLine(ln, fid);
                 }
                 sources.get(fid).length = flen;
 
@@ -162,22 +164,37 @@ public class Index5 {
 //          1  answer ←      {}
         Posting answer = null;
         Posting last = null;
-//      2 while p1  != NIL and p2  != NIL
-     
-//          3 do if docID ( p 1 ) = docID ( p2 )
- 
-//          4   then ADD ( answer, docID ( p1 ))
-                // answer.add(pL1.docId);
- 
-//          5       p1 ← next ( p1 )
-//          6       p2 ← next ( p2 )
- 
- //          7   else if docID ( p1 ) < docID ( p2 )
-            
-//          8        then p1 ← next ( p1 )
-//          9        else p2 ← next ( p2 )
- 
-//      10 return answer
+        while (pL1 != null && pL2 != null) {
+
+        // if docID(p1) == docID(p2)
+        if (pL1.docId == pL2.docId) {
+
+            // ADD(answer, docID(p1))
+            Posting newNode = new Posting(pL1.docId);
+
+            if (answer == null) {
+                answer = newNode;
+                last = newNode;
+            } else {
+                last.next = newNode;
+                last = newNode;
+            }
+
+            // move both
+            pL1 = pL1.next;
+            pL2 = pL2.next;
+        }
+
+        // else if docID(p1) < docID(p2)
+        else if (pL1.docId < pL2.docId) {
+            pL1 = pL1.next;
+        }
+
+        // else
+        else {
+            pL2 = pL2.next;
+        }
+    }
         return answer;
     }
 
