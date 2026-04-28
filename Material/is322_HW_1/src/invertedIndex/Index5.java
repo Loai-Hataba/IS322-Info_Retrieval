@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.io.PrintWriter;
-
+import java.util.ArrayList;
 /**
  *
  * @author ehab
@@ -43,7 +43,6 @@ public class Index5 {
 
     //---------------------------------------------
     public void printPostingList(Posting p) {
-        // Iterator<Integer> it2 = hset.iterator();
         System.out.print("[");
         while (p != null) {
             System.out.print(p.docId);
@@ -54,7 +53,6 @@ public class Index5 {
         }
         System.out.println("]");
     }
-
     //---------------------------------------------
     public void printDictionary() {
         Iterator it = index.entrySet().iterator();
@@ -69,7 +67,7 @@ public class Index5 {
     }
  
     //-----------------------------------------------
-    public void buildIndex(String[] files) {  // from disk not from the internet
+    public void buildIndex(String[] files) {  
         int fid = 0;
         for (String fileName : files) {
             try (BufferedReader file = new BufferedReader(new FileReader(fileName))) {
@@ -79,9 +77,8 @@ public class Index5 {
                 String ln;
                 int flen = 0;
                 while ((ln = file.readLine()) != null) {
-                    /// -2- **** complete here ****
-                    ///**** hint   flen +=  ________________(ln, fid);
-                    flen += indexOneLine(ln, fid);
+                    // Pass the current flen as the startPosition for the line
+                    flen += indexOneLine(ln, fid, flen);
                 }
                 sources.get(fid).length = flen;
 
@@ -90,51 +87,56 @@ public class Index5 {
             }
             fid++;
         }
-        //   printDictionary();
     }
-
     //----------------------------------------------------------------------------  
-    public int indexOneLine(String ln, int fid) {
-        int flen = 0;
 
+    public int indexOneLine(String ln, int fid, int startPosition) {
+        int flen = 0;
         String[] words = ln.split("\\W+");
-      //   String[] words = ln.replaceAll("(?:[^a-zA-Z0-9 -]|(?<=\\w)-(?!\\S))", " ").toLowerCase().split("\\s+");
         flen += words.length;
+        
+        int currentPos = startPosition;
+
         for (String word : words) {
             word = word.toLowerCase();
+            
             if (stopWord(word)) {
+                currentPos++; // Stop words take up a positional slot!
                 continue;
             }
+            
             word = stemWord(word);
-            // check to see if the word is not in the dictionary
-            // if not add it
+            
+            // If the word is not in the dictionary, add it
             if (!index.containsKey(word)) {
                 index.put(word, new DictEntry());
             }
-            // add document id to the posting list
+            
+            // If this is the first time the word appears in this document
             if (!index.get(word).postingListContains(fid)) {
-                index.get(word).doc_freq += 1; //set doc freq to the number of doc that contain the term 
+                index.get(word).doc_freq += 1; 
+                
+                Posting newPosting = new Posting(fid);
+                newPosting.addPosition(currentPos); // Track position
+                
                 if (index.get(word).pList == null) {
-                    index.get(word).pList = new Posting(fid);
-                    index.get(word).last = index.get(word).pList;
+                    index.get(word).pList = newPosting;
+                    index.get(word).last = newPosting;
                 } else {
-                    index.get(word).last.next = new Posting(fid);
+                    index.get(word).last.next = newPosting;
                     index.get(word).last = index.get(word).last.next;
                 }
             } else {
+                // Word already exists in this doc, just append the new position
                 index.get(word).last.dtf += 1;
+                index.get(word).last.addPosition(currentPos); 
             }
-            //set the term_fteq in the collection
+            
             index.get(word).term_freq += 1;
-            if (word.equalsIgnoreCase("lattice")) {
-
-                System.out.println("  <<" + index.get(word).getPosting(1) + ">> " + ln);
-            }
-
+            currentPos++; // Increment position for the next word
         }
         return flen;
     }
-
 //----------------------------------------------------------------------------  
     boolean stopWord(String word) {
         if (word.equals("the") || word.equals("to") || word.equals("be") || word.equals("for") || word.equals("from") || word.equals("in")
@@ -158,60 +160,105 @@ public class Index5 {
     }
 
     //----------------------------------------------------------------------------  
+ /**
+     * Intersects two positional posting lists to evaluate a phrase query.
+     * Uses two-pointer logic at the document level, and nested two-pointer 
+     * logic at the position level to check for exact word adjacency.
+     * @param pL1 The first posting list.
+     * @param pL2 The second posting list.
+     * @return A new Posting list containing documents where the terms appear adjacently.
+     */
     Posting intersect(Posting pL1, Posting pL2) {
-///****  -1-   complete after each comment ****
-//   INTERSECT ( p1 , p2 )
-//          1  answer ←      {}
         Posting answer = null;
         Posting last = null;
+        
         while (pL1 != null && pL2 != null) {
-
-        // if docID(p1) == docID(p2)
-        if (pL1.docId == pL2.docId) {
-
-            // ADD(answer, docID(p1))
-            Posting newNode = new Posting(pL1.docId);
-
-            if (answer == null) {
-                answer = newNode;
-                last = newNode;
+            
+            // Document Match found
+            if (pL1.docId == pL2.docId) {
+                
+                ArrayList<Integer> pos1 = pL1.getPositions();
+                ArrayList<Integer> pos2 = pL2.getPositions();
+                ArrayList<Integer> matchedPositions = new ArrayList<>();
+                
+                // Nested two-pointers to find adjacent positions
+                int i = 0, j = 0;
+                while (i < pos1.size() && j < pos2.size()) {
+                    int p1 = pos1.get(i);
+                    int p2 = pos2.get(j);
+                    
+                    if (p2 == p1 + 1) { 
+                        matchedPositions.add(p2); // Store p2 to chain longer phrases
+                        i++;
+                        j++;
+                    } else if (p2 < p1 + 1) {
+                        j++;
+                    } else {
+                        i++; 
+                    }
+                }
+                
+                // If adjacent positions were found, add to the result list
+                if (!matchedPositions.isEmpty()) {
+                    Posting newNode = new Posting(pL1.docId);
+                    for (int pos : matchedPositions) {
+                        newNode.addPosition(pos);
+                    }
+                    
+                    if (answer == null) {
+                        answer = newNode;
+                        last = newNode;
+                    } else {
+                        last.next = newNode;
+                        last = newNode;
+                    }
+                }
+                
+                pL1 = pL1.next;
+                pL2 = pL2.next;
+            } 
+            else if (pL1.docId < pL2.docId) {
+                pL1 = pL1.next;
             } else {
-                last.next = newNode;
-                last = newNode;
+                pL2 = pL2.next;
             }
-
-            // move both
-            pL1 = pL1.next;
-            pL2 = pL2.next;
         }
-
-        // else if docID(p1) < docID(p2)
-        else if (pL1.docId < pL2.docId) {
-            pL1 = pL1.next;
-        }
-
-        // else
-        else {
-            pL2 = pL2.next;
-        }
-    }
         return answer;
     }
 
-    public String find_24_01(String phrase) { // any mumber of terms non-optimized search 
+
+
+    public String find_24_01(String phrase) { 
         String result = "";
         String[] words = phrase.split("\\W+");
         int len = words.length;
+        if (len == 0) return result;
         
-        //fix this if word is not in the hash table will crash...
-        Posting posting = index.get(words[0].toLowerCase()).pList;
+        String firstWord = words[0].toLowerCase();
+        
+        if (!index.containsKey(firstWord)) {
+            return "Phrase not found in collection.\n";
+        }
+        
+        Posting posting = index.get(firstWord).pList;
         int i = 1;
         while (i < len) {
-            posting = intersect(posting, index.get(words[i].toLowerCase()).pList);
+            String nextWord = words[i].toLowerCase();
+            
+            // EDGE CASE FIX: Check if subsequent words exist
+            if (!index.containsKey(nextWord)) {
+                return "Phrase not found in collection.\n"; 
+            }
+            
+            posting = intersect(posting, index.get(nextWord).pList);
             i++;
         }
+        
+        if (posting == null) {
+            return "Phrase not found in collection.\n";
+        }
+        
         while (posting != null) {
-            //System.out.println("\t" + sources.get(num));
             result += "\t" + posting.docId + " - " + sources.get(posting.docId).title + " - " + sources.get(posting.docId).length + "\n";
             posting = posting.next;
         }
@@ -243,7 +290,7 @@ public class Index5 {
 
     public void store(String storageName) {
         try {
-            String pathToStorage = "/home/ehab/tmp11/rl/"+storageName;
+            String pathToStorage = "../../Material/tmp11/rl/" + storageName;
             Writer wr = new FileWriter(pathToStorage);
             for (Map.Entry<Integer, SourceRecord> entry : sources.entrySet()) {
                 System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue().URL + ", Value = " + entry.getValue().title + ", Value = " + entry.getValue().text);
@@ -280,7 +327,7 @@ public class Index5 {
     }
 //=========================================    
     public boolean storageFileExists(String storageName){
-        java.io.File f = new java.io.File("/home/ehab/tmp11/rl/"+storageName);
+        java.io.File f = new java.io.File("../../Material/tmp11/rl/" + storageName);
         if (f.exists() && !f.isDirectory())
             return true;
         return false;
@@ -289,7 +336,7 @@ public class Index5 {
 //----------------------------------------------------    
     public void createStore(String storageName) {
         try {
-            String pathToStorage = "/home/ehab/tmp11/"+storageName;
+            String pathToStorage = "../../Material/tmp11/rl/" + storageName;
             Writer wr = new FileWriter(pathToStorage);
             wr.write("end" + "\n");
             wr.close();
@@ -302,7 +349,7 @@ public class Index5 {
      //load index from hard disk into memory
     public HashMap<String, DictEntry> load(String storageName) {
         try {
-            String pathToStorage = "/home/ehab/tmp11/rl/"+storageName;         
+            String pathToStorage = "../../Material/tmp11/rl/" + storageName;         
             sources = new HashMap<Integer, SourceRecord>();
             index = new HashMap<String, DictEntry>();
             BufferedReader file = new BufferedReader(new FileReader(pathToStorage));

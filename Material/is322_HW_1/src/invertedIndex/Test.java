@@ -16,15 +16,21 @@ import java.io.InputStreamReader;
 public class Test {
 
     public static void main(String args[]) throws IOException {
-        Index5 index = new Index5();
-        //|**  change it to your collection directory 
-        //|**  in windows "C:\\tmp11\\rl\\collection\\"       
-        String files = "Material/tmp11/rl/collection/";
+    Index5 index = new Index5();
+        
+        // Use ../../ to go up from 'src' -> 'is322_HW_1' -> 'Material'
+        String files = "../../Material/tmp11/rl/collection/";
 
         File file = new File(files);
-        //|** String[] 	list()
-        //|**  Returns an array of strings naming the files and directories in the directory denoted by this abstract pathname.
         String[] fileList = file.list();
+
+        // SAFETY CHECK: Prevent the NullPointerException if the path is wrong
+        if (fileList == null) {
+            System.err.println("ERROR: Could not find the collection directory at:");
+            System.err.println(file.getAbsolutePath());
+            System.err.println("Please check your file paths!");
+            return; // Stop the program safely
+        }
 
         fileList = index.sort(fileList);
         index.N = fileList.length;
@@ -32,6 +38,7 @@ public class Test {
         for (int i = 0; i < fileList.length; i++) {
             fileList[i] = files + fileList[i];
         }
+        
         index.buildIndex(fileList);
         index.store("index");
         index.printDictionary();
