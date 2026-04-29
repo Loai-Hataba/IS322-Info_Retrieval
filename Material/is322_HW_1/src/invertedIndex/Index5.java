@@ -42,18 +42,31 @@ public class Index5 {
 
 
     //---------------------------------------------
+    /**
+     * Prints a posting list in the format [docId1,docId2,...,docIdN].
+     * Commas are placed ONLY between elements — there is no trailing comma
+     * after the last entry, satisfying Task 4 of the assignment.
+     *
+     * @param p The head node of the posting list to print.
+     */
     public void printPostingList(Posting p) {
         System.out.print("[");
         while (p != null) {
             System.out.print(p.docId);
             if (p.next != null) {
-                System.out.print(",");  // comma only between elements
+                System.out.print(",");  // comma only between elements, NOT after the last
             }
             p = p.next;
         }
         System.out.println("]");
     }
     //---------------------------------------------
+    /**
+     * Prints the entire inverted index dictionary to standard output.
+     * For every term it shows: the term, its document frequency (how many
+     * documents contain it), and the full posting list of document IDs.
+     * A summary line at the end shows the total vocabulary size.
+     */
     public void printDictionary() {
         Iterator it = index.entrySet().iterator();
         while (it.hasNext()) {
@@ -67,6 +80,16 @@ public class Index5 {
     }
  
     //-----------------------------------------------
+    /**
+     * Builds the inverted index from an array of file paths.
+     * Each file is assigned a unique integer document ID (fid) starting at 0.
+     * The method reads the file line by line, delegates per-line indexing to
+     * {@link #indexOneLine(String, int, int)}, and accumulates the total
+     * document length (word count) in the {@code sources} map.
+     * Files that cannot be opened are skipped with a warning message.
+     *
+     * @param files An array of file paths to index.
+     */
     public void buildIndex(String[] files) {  
         int fid = 0;
         for (String fileName : files) {
@@ -90,6 +113,20 @@ public class Index5 {
     }
     //----------------------------------------------------------------------------  
 
+    /**
+     * Indexes a single line of text from a document into the inverted index.
+     * The method tokenises the line on non-word characters, converts each token
+     * to lowercase, skips stop words (preserving their positional slot), applies
+     * optional stemming, and then either creates a new posting for the document
+     * or updates an existing one by appending the current word position.
+     *
+     * @param ln            The raw line of text to index.
+     * @param fid           The document ID of the file containing this line.
+     * @param startPosition The word-position offset at which this line begins
+     *                      within the document (cumulative across all lines).
+     * @return The number of tokens found on this line (used to update the
+     *         running document length).
+     */
     public int indexOneLine(String ln, int fid, int startPosition) {
         int flen = 0;
         String[] words = ln.split("\\W+");
@@ -138,6 +175,18 @@ public class Index5 {
         return flen;
     }
 //----------------------------------------------------------------------------  
+    /**
+     * Determines whether a word is a stop word that should be excluded from
+     * the index. Stop words are common function words that carry little
+     * semantic meaning (e.g. "the", "and", "to"). Words shorter than 2
+     * characters are also treated as stop words.
+     * NOTE: Even though stop words are not indexed, they still consume a
+     * positional slot so that positional distances between real terms remain
+     * accurate.
+     *
+     * @param word The lowercase word to test.
+     * @return {@code true} if the word is a stop word, {@code false} otherwise.
+     */
     boolean stopWord(String word) {
         if (word.equals("the") || word.equals("to") || word.equals("be") || word.equals("for") || word.equals("from") || word.equals("in")
                 || word.equals("a") || word.equals("into") || word.equals("by") || word.equals("or") || word.equals("and") || word.equals("that")) {
@@ -151,6 +200,15 @@ public class Index5 {
     }
 //----------------------------------------------------------------------------  
 
+    /**
+     * Applies stemming to reduce a word to its root form.
+     * Currently a no-op (returns the word unchanged). The full Porter Stemmer
+     * implementation is available in {@code Stemmer.java} and can be enabled
+     * by uncommenting the code below.
+     *
+     * @param word The word to stem.
+     * @return The stemmed word (currently the original word unchanged).
+     */
     String stemWord(String word) { //skip for now
         return word;
 //        Stemmer s = new Stemmer();
@@ -228,6 +286,19 @@ public class Index5 {
 
 
 
+    /**
+     * Searches the index for documents containing the given phrase.
+     * A "phrase" here is treated as a sequence of words that must appear
+     * consecutively (adjacent positions) in a document.
+     * The method iterates through each word in the phrase, retrieving its
+     * posting list and progressively intersecting them using the positional
+     * {@link #intersect(Posting, Posting)} method. Only documents where ALL
+     * words appear in the exact given order are returned.
+     *
+     * @param phrase A string of one or more space-separated search terms.
+     * @return A formatted string listing matching documents (docId, title,
+     *         length), or a "not found" message if no match exists.
+     */
     public String find_24_01(String phrase) { 
         String result = "";
         String[] words = phrase.split("\\W+");
@@ -267,6 +338,15 @@ public class Index5 {
     
     
     //---------------------------------
+    /**
+     * Sorts an array of strings in ascending alphabetical order using
+     * bubble sort. This is used to order the file list before building
+     * the index so that document IDs are assigned consistently
+     * (e.g. docId 0 = p1, docId 1 = p2, … docId 6 = p7).
+     *
+     * @param words The array of strings to sort (modified in place).
+     * @return The same array, sorted in ascending order.
+     */
     String[] sort(String[] words) {  //bubble sort
         boolean sorted = false;
         String sTmp;
@@ -288,6 +368,21 @@ public class Index5 {
 
      //---------------------------------
 
+    /**
+     * Persists the current in-memory index to a flat text file on disk.
+     * The file format has two sections separated by the marker line "section2":
+     * <ul>
+     *   <li><b>Section 1</b>: One line per document —
+     *       {@code docId,URL,title,length,norm,text}</li>
+     *   <li><b>Section 2</b>: One line per term —
+     *       {@code term,doc_freq,term_freq;docId,dtf:docId,dtf:...}</li>
+     * </ul>
+     * The file is written to {@code ../../Material/tmp11/rl/<storageName>}.
+     * Commas inside titles or text are replaced with '~' to avoid
+     * conflicting with the CSV delimiter.
+     *
+     * @param storageName The name of the output file (e.g. {@code "index"}).
+     */
     public void store(String storageName) {
         try {
             String pathToStorage = "../../Material/tmp11/rl/" + storageName;
@@ -326,6 +421,13 @@ public class Index5 {
         }
     }
 //=========================================    
+    /**
+     * Checks whether a previously saved index file exists on disk.
+     *
+     * @param storageName The name of the index file to look for.
+     * @return {@code true} if the file exists and is not a directory,
+     *         {@code false} otherwise.
+     */
     public boolean storageFileExists(String storageName){
         java.io.File f = new java.io.File("../../Material/tmp11/rl/" + storageName);
         if (f.exists() && !f.isDirectory())
@@ -334,6 +436,13 @@ public class Index5 {
             
     }
 //----------------------------------------------------    
+    /**
+     * Creates an empty index storage file containing only the "end" marker.
+     * This is used to initialise a blank store before the first index is built,
+     * ensuring that {@link #load(String)} will not fail on an empty file.
+     *
+     * @param storageName The name of the file to create.
+     */
     public void createStore(String storageName) {
         try {
             String pathToStorage = "../../Material/tmp11/rl/" + storageName;
@@ -346,7 +455,16 @@ public class Index5 {
         }
     }
 //----------------------------------------------------      
-     //load index from hard disk into memory
+    /**
+     * Loads a previously saved index from disk back into memory.
+     * Parses both sections of the storage file produced by {@link #store(String)}:
+     * rebuilds the {@code sources} map (document metadata) and the {@code index}
+     * map (term → posting list). The '~' placeholder in titles/text is converted
+     * back to ',' after reading.
+     *
+     * @param storageName The name of the index file to load.
+     * @return The reconstructed {@code index} HashMap, ready for querying.
+     */
     public HashMap<String, DictEntry> load(String storageName) {
         try {
             String pathToStorage = "../../Material/tmp11/rl/" + storageName;         
