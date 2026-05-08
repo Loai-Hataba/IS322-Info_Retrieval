@@ -592,8 +592,20 @@ public class Index5 {
      * @return Map of term → TF-IDF weight for the query.
      */
     public HashMap<String, Double> queryToVector(String query) {
-        // TODO: Person 5 – tokenize query, compute TF per term, multiply by idfMap weight.
-        return new HashMap<>();
+        HashMap<String, Integer> tf = new HashMap<>();
+        String[] tokens = query.split("\\W+");
+        for (String token : tokens) {
+            token = token.toLowerCase();
+            if (stopWord(token)) continue;
+            token = stemWord(token);
+            tf.put(token, tf.getOrDefault(token, 0) + 1);
+        }
+        HashMap<String, Double> qVec = new HashMap<>();
+        for (Map.Entry<String, Integer> e : tf.entrySet()) {
+            double weight = e.getValue() * idfMap.getOrDefault(e.getKey(), 0.0);
+            if (weight > 0) qVec.put(e.getKey(), weight);
+        }
+        return qVec;
     }
 
     /**
@@ -604,8 +616,19 @@ public class Index5 {
      * @return Map of docId → cosine similarity score.
      */
     public HashMap<Integer, Double> computeCosineSimilarity(HashMap<String, Double> qVec) {
-        // TODO: Person 5 – for each doc, compute dot(qVec, docVectors[doc]) / norm[doc].
-        return new HashMap<>();
+        HashMap<Integer, Double> scores = new HashMap<>();
+        for (Map.Entry<Integer, HashMap<String, Double>> docEntry : docVectors.entrySet()) {
+            int docId = docEntry.getKey();
+            HashMap<String, Double> termWeights = docEntry.getValue();
+            double dot = 0.0;
+            for (Map.Entry<String, Double> qEntry : qVec.entrySet()) {
+                Double docWeight = termWeights.get(qEntry.getKey());
+                if (docWeight != null) dot += qEntry.getValue() * docWeight;
+            }
+            double norm = sources.get(docId).norm;
+            if (norm > 0) scores.put(docId, dot / norm);
+        }
+        return scores;
     }
 }
 
