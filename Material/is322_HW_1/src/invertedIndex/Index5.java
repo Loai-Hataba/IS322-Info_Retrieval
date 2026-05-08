@@ -29,6 +29,10 @@ public class Index5 {
     public Map<Integer, SourceRecord> sources;  // store the doc_id and the file name.
 
     public HashMap<String, DictEntry> index; // THe inverted index
+
+    // HW2 fields
+    public HashMap<String, Double> idfMap = new HashMap<>();
+    public HashMap<Integer, HashMap<String, Double>> docVectors = new HashMap<>();
     //--------------------------------------------
 
     public Index5() {
@@ -518,6 +522,90 @@ public class Index5 {
             e.printStackTrace();
         }
         return index;
+    }
+
+    // ==================================================================
+    // HW2 METHODS
+    // ==================================================================
+
+    // ---------------------------------------------------------------
+    // PERSON 2 – Build index from in-memory web documents
+    // ---------------------------------------------------------------
+    /**
+     * Indexes a list of SourceRecord objects obtained from the web crawler.
+     * Each record's text is split into lines and fed into indexOneLine.
+     *
+     * @param docs List of crawled pages (each with fid, URL, title, text).
+     */
+    public void buildIndexFromWeb(java.util.List<SourceRecord> docs) {
+        // TODO: Person 2 – iterate docs, call indexOneLine per line of doc.text,
+        //       populate sources map, accumulate doc lengths.
+    }
+
+    // ---------------------------------------------------------------
+    // PERSON 3 – IDF and Document Norms
+    // ---------------------------------------------------------------
+    /**
+     * Computes IDF for every term in the index: idf = log10(N / doc_freq).
+     * Results are stored in idfMap.
+     *
+     * @param n Total number of documents in the collection.
+     */
+    public void computeIDF(int n) {
+        // TODO: Person 3 – for each term in index, compute log10(n / doc_freq)
+        //       and put into idfMap.
+    }
+
+    /**
+     * Computes and stores the Euclidean norm of each document's TF-IDF vector.
+     * Must be called AFTER computeIDF and computeDocVectors.
+     * Result stored in sources.get(docId).norm.
+     */
+    public void computeDocNorms() {
+        // TODO: Person 3 – for each doc in docVectors, compute sqrt(sum of weight^2)
+        //       and store in sources.get(docId).norm.
+    }
+
+    // ---------------------------------------------------------------
+    // PERSON 4 – TF-IDF Document Vectors
+    // ---------------------------------------------------------------
+    /**
+     * Builds a TF-IDF weight vector for every document.
+     * For each term, for each posting (docId, dtf): weight = dtf * idf[term].
+     * Results stored in docVectors[docId][term].
+     * Must be called AFTER computeIDF.
+     */
+    public void computeDocVectors() {
+        // TODO: Person 4 – iterate index entries, compute weight = dtf * idfMap.get(term),
+        //       store in docVectors.
+    }
+
+    // ---------------------------------------------------------------
+    // PERSON 5 – Query Vectorization and Cosine Similarity
+    // ---------------------------------------------------------------
+    /**
+     * Converts a query string into a TF-IDF weight vector.
+     * Tokenize, lowercase, skip stop words, apply stemming, then
+     * weight = tf_in_query * idf[term].
+     *
+     * @param query The raw query string.
+     * @return Map of term → TF-IDF weight for the query.
+     */
+    public HashMap<String, Double> queryToVector(String query) {
+        // TODO: Person 5 – tokenize query, compute TF per term, multiply by idfMap weight.
+        return new HashMap<>();
+    }
+
+    /**
+     * Computes cosine similarity between the query vector and every document vector.
+     * Dot product of overlapping terms, then divide by SourceRecord.norm.
+     *
+     * @param qVec Query TF-IDF vector (term → weight).
+     * @return Map of docId → cosine similarity score.
+     */
+    public HashMap<Integer, Double> computeCosineSimilarity(HashMap<String, Double> qVec) {
+        // TODO: Person 5 – for each doc, compute dot(qVec, docVectors[doc]) / norm[doc].
+        return new HashMap<>();
     }
 }
 
