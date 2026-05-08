@@ -538,8 +538,15 @@ public class Index5 {
      * @param docs List of crawled pages (each with fid, URL, title, text).
      */
     public void buildIndexFromWeb(java.util.List<SourceRecord> docs) {
-        // TODO: Person 2 – iterate docs, call indexOneLine per line of doc.text,
-        //       populate sources map, accumulate doc lengths.
+        for (SourceRecord doc : docs) {
+            sources.put(doc.fid, doc);
+            int flen = 0;
+            String[] lines = doc.text.split("\n");
+            for (String line : lines) {
+                flen += indexOneLine(line, doc.fid, flen);
+            }
+            sources.get(doc.fid).length = flen;
+        }
     }
 
     // ---------------------------------------------------------------
