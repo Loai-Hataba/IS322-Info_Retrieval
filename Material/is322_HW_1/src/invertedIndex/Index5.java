@@ -584,7 +584,31 @@ public class Index5 {
      */
     public void computeDocVectors() {
         // TODO: Person 4 – iterate index entries, compute weight = dtf * idfMap.get(term),
-        //       store in docVectors.
+        // iterate over all terms in the index
+        for(Map.Entry<String,DictEntry> entry: index.entrySet()){
+            String term = entry.getKey();
+            DictEntry dictEntry = entry.getValue();
+            // get IDF value of this term
+            double idf = idfMap.getOrDefault(term, 0.0);
+            // posting list of this term
+            Posting p = dictEntry.pList;
+            while(p != null){
+                int docId = p.docId;
+
+                // TF-IDF weight
+                double weight = p.dtf * idf;
+                // if this document does not yet have a vector
+            if (!docVectors.containsKey(docId)) {
+                docVectors.put(docId, new HashMap<>());
+            }
+
+            // store term weight inside this document vector
+            docVectors.get(docId).put(term, weight);
+
+            // move to next posting
+            p = p.next;
+            }
+        }
     }
 
     // ---------------------------------------------------------------

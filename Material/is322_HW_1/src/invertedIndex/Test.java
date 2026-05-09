@@ -8,6 +8,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -57,6 +59,9 @@ public class Test {
         }
 
         index.buildIndex(fileList);
+        index.computeIDF(index.N);
+        index.computeDocVectors();
+        index.computeDocNorms();
         index.store("index");
         index.printDictionary();
 
@@ -72,6 +77,24 @@ public class Test {
                 break; // treat EOF as "quit"
             if (!phrase.isEmpty()) {
                 System.out.println("Boolean Model result = \n" + index.find_24_01(phrase));
+
+                HashMap<String, Double> qVec = index.queryToVector(phrase);
+
+                HashMap<Integer, Double> scores = index.computeCosineSimilarity(qVec);
+
+                System.out.println("Cosine Similarity Results:");
+
+                for (Map.Entry<Integer, Double> entry : scores.entrySet()) {
+
+                    int docId = entry.getKey();
+                    double score = entry.getValue();
+
+                    System.out.println(
+                        "DocID: " + docId +
+                        " | Score: " + score +
+                        " | File: " + index.sources.get(docId).title
+                    );
+                }
             }
         } while (!phrase.isEmpty());
 
