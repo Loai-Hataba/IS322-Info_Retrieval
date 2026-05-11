@@ -3,6 +3,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "WebCrawlerWithDepth",
+            "request": "launch",
+            "mainClass": "crawler.WebCrawlerWithDepth",
+            "projectName": "is322_HW_1_6dbadd6c"
+        },
+        {
+            "type": "java",
             "name": "Run Test (IS322 HW1)",
             "request": "launch",
             "mainClass": "invertedIndex.Test",

@@ -3,6 +3,10 @@ package crawler;
 import invertedIndex.Index5;
 import invertedIndex.SourceRecord;
 import java.util.*;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 /**
  * HW2 – Main entry point.
@@ -14,21 +18,80 @@ public class WebCrawlerWithDepth {
     static final int MAX_PAGES = 10;
     static final int TOP_K = 10;
 
-    // ---------------------------------------------------------------
-    // PERSON 1 – Web Crawler
-    // ---------------------------------------------------------------
-    /**
-     * BFS-crawl Wikipedia starting from seedUrl, visiting at most maxPages pages.
-     * Use jsoup to fetch each page: extract title, plain body text, and outgoing links.
-     * Maintain a visited HashSet and a BFS queue to avoid re-visiting URLs.
-     *
-     * @param seedUrl  Starting Wikipedia URL.
-     * @param maxPages Maximum number of pages to visit.
-     * @return List of SourceRecord, one per visited page (fid, URL, title, text).
-     */
+
     public List<SourceRecord> crawl(String seedUrl, int maxPages) {
-        // TODO: Person 1 – implement BFS crawl using jsoup
-        return new ArrayList<>();
+        if (seedUrl == null || seedUrl.isEmpty() || maxPages <= 0) {
+            throw new IllegalArgumentException("Invalid seed URL or maxPages");
+        }
+        // check if seedUrl is a valid Wikipedia URL
+        if (!seedUrl.startsWith("https://en.wikipedia.org/wiki/")) {
+            throw new IllegalArgumentException("Seed URL must be a Wikipedia page");
+        }
+
+        HashSet<String> visitedUrls = new HashSet<>();
+        Queue<String> urlQueue = new LinkedList<>();
+        List<SourceRecord> records = new ArrayList<>();
+
+        urlQueue.add(seedUrl);
+
+        while (!urlQueue.isEmpty() && visitedUrls.size() < maxPages) {
+            String url = urlQueue.poll();
+            if (visitedUrls.contains(url)) continue;
+            
+            try {
+                // Fetch the page using jsoup
+                Document doc = Jsoup.connect(url).get();
+                int fid = records.size(); // assign fid based on current size of records
+                String title = doc.title();
+                Elements paragraphs = doc.select("#mw-content-text p");
+                StringBuilder sb = new StringBuilder();
+                for (Element p : paragraphs) {
+                    sb.append(p.text()).append(" ");
+                }
+                String text = sb.toString();
+                text = text.replaceAll("\\[\\d+\\]", "");        // citation numbers [1], [23]
+                text = text.replaceAll("\\[edit\\]", "");         // section edit links
+                text = text.toLowerCase();
+                text = text.replaceAll("[^a-z0-9\\s]", ""); // remove punctuation, keep letters, numbers, spaces
+                text = text.replaceAll("\\s{2,}", " ");           // multiple spaces → single space
+                text = text.trim();                               // leading/trailing whitespace
+
+                records.add(new SourceRecord(fid, url, title, text));
+                visitedUrls.add(url);
+
+                // Extract outgoing links
+                List<Element> links = doc.select("a[href]");
+
+                for (Element link : links) {
+                    String absUrl = link.attr("abs:href");
+
+                    // skip empty links and non-Wikipedia URLs
+                    if (absUrl == null || absUrl.isEmpty()) continue;
+                    if (!absUrl.startsWith("https://en.wikipedia.org/wiki/")) continue;
+
+                    // skip main page
+                    if (absUrl.equals("https://en.wikipedia.org/wiki/Main_Page")) continue;
+
+                    // strip fragment (#Section)
+                    if (absUrl.contains("#")) {
+                        absUrl = absUrl.substring(0, absUrl.indexOf("#"));
+                    }
+
+                    // skip non-article namespaces (File:, Category:, Help:, etc.)
+                    String afterWiki = absUrl.substring("https://en.wikipedia.org/wiki/".length());
+                    if (afterWiki.contains(":")) continue;
+                    
+                    if (!visitedUrls.contains(absUrl)) {
+                        urlQueue.add(absUrl);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error fetching " + url + ": " + e.getMessage());
+            }
+    
+        }
+
+        return records;
     }
 
     // ---------------------------------------------------------------
@@ -94,4 +157,5 @@ public class WebCrawlerWithDepth {
         System.out.println("Goodbye!");
         in.close();
     }
+
 }
