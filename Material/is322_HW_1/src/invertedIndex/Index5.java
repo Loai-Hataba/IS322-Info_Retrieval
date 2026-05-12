@@ -559,18 +559,46 @@ public class Index5 {
      * @param n Total number of documents in the collection.
      */
     public void computeIDF(int n) {
-        // TODO: Person 3 – for each term in index, compute log10(n / doc_freq)
-        //       and put into idfMap.
+        idfMap.clear();
+        for (Map.Entry<String, DictEntry> entry : index.entrySet()) {
+            String term = entry.getKey();
+            int df = entry.getValue().doc_freq;
+            if (df > 0) {
+                idfMap.put(term, log10((double) n / (double) df));
+            } else {
+                idfMap.put(term, 0.0);
+            }
+        }
     }
 
     /**
      * Computes and stores the Euclidean norm of each document's TF-IDF vector.
-     * Must be called AFTER computeIDF and computeDocVectors.
-     * Result stored in sources.get(docId).norm.
+     * Must be called AFTER computeIDF.
+     * For each document d:  norm(d) = sqrt( sum over terms t in d of (dtf(t,d) * idf(t))^2 )
+     * Result is stored in sources.get(docId).norm.
      */
     public void computeDocNorms() {
-        // TODO: Person 3 – for each doc in docVectors, compute sqrt(sum of weight^2)
-        //       and store in sources.get(docId).norm.
+        // accumulate sum of squared TF-IDF weights per doc
+        HashMap<Integer, Double> sumSquares = new HashMap<>();
+        for (Map.Entry<String, DictEntry> entry : index.entrySet()) {
+            String term = entry.getKey();
+            double idf = idfMap.getOrDefault(term, 0.0);
+            if (idf == 0.0) {
+                // term still contributes 0 to norm; skip
+                continue;
+            }
+            Posting p = entry.getValue().pList;
+            while (p != null) {
+                double w = p.dtf * idf;
+                sumSquares.merge(p.docId, w * w, Double::sum);
+                p = p.next;
+            }
+        }
+        // store sqrt into each SourceRecord.norm (default 0 if doc has no terms)
+        for (Map.Entry<Integer, SourceRecord> e : sources.entrySet()) {
+            double s = sumSquares.getOrDefault(e.getKey(), 0.0);
+            e.getValue().norm = sqrt(s);
+        }
     }
 
     // ---------------------------------------------------------------
