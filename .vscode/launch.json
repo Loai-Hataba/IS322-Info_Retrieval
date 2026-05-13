@@ -9,6 +9,13 @@
             "name": "Test",
             "request": "launch",
             "mainClass": "invertedIndex.Test",
+            "projectName": "IS322-Info_Retrieval_f523d6a6"
+        },
+        {
+            "type": "java",
+            "name": "Test",
+            "request": "launch",
+            "mainClass": "invertedIndex.Test",
             "projectName": "IS322-Info_Retrieval_5ff6c7e5"
         },
         {

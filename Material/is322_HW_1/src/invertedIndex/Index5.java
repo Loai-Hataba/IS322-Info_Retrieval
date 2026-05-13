@@ -15,6 +15,7 @@ import static java.lang.Math.sqrt;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -339,6 +340,25 @@ public class Index5 {
         }
         return result;
     }
+
+
+    /**
+     * Ranks documents by cosine similarity score and returns top K results.
+     *
+     * @param scores Map of docId → similarity score
+     * @param k number of top documents to return
+     * @return sorted list of top K (docId, score) pairs
+     */
+    public List<Map.Entry<Integer, Double>> rankTopK(
+            HashMap<Integer, Double> scores, int k) {
+
+        return scores.entrySet()
+                .stream()
+                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue())) // descending
+                .limit(k)
+                .toList();
+    }
+
     
     
     //---------------------------------
