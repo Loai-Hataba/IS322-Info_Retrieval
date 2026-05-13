@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package invertedIndex;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +8,7 @@ import java.util.Map;
 
 import crawler.WebCrawlerWithDepth;
 
-/**
+/**s
  *
  * @author ehab
  */
@@ -53,68 +49,52 @@ public class Test {
         index.store("index");
         index.printDictionary();
 
-        String phrase = "";
-
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
-        do {
-            System.out.println("Print search phrase: ");
-            phrase = in.readLine();
+        while (true) {
+            System.out.println("\n1. Search");
+            System.out.println("2. Exit");
+            System.out.print("Choose: ");
+            String choice = in.readLine();
 
-            // NULL GUARD: readLine() returns null when the user presses Ctrl+Z
-            if (phrase == null)
-                break; // treat EOF as "quit"
+            if (choice == null || choice.trim().equals("2")) break;
 
-            // FIX: normalize input to avoid "not found" due to casing/spaces
-            phrase = phrase.trim().toLowerCase();
-
-            if (!phrase.isEmpty()) {
-
-                // Boolean Model (optional if still supported)
-                System.out.println("Boolean Model result = \n" + index.find_24_01(phrase));
-
-                // =========================
-                // Query Vector
-                // =========================
-                HashMap<String, Double> qVec =
-                        index.queryToVector(phrase);
-
-                // =========================
-                // Cosine Similarity
-                // =========================
-                HashMap<Integer, Double> scores =
-                        index.computeCosineSimilarity(qVec);
-
-                // =========================
-                // Rank Top 10
-                // =========================
-                List<Map.Entry<Integer, Double>> ranked =
-                        index.rankTopK(scores, 10);
-
-                System.out.println("Cosine Similarity Results:");
-
-                int rank = 1;
-
-                for (Map.Entry<Integer, Double> entry : ranked) {
-
-                    int docId = entry.getKey();
-                    double score = entry.getValue();
-
-                    if (score <= 0) continue;
-
-                    System.out.println(
-                        rank + ". " +
-                        "DocID: " + docId +
-                        " | Score: " + score +
-                        " | Title: " + index.sources.get(docId).title +
-                        " | URL: " + index.sources.get(docId).URL
-                    );
-
-                    rank++;
-                }
+            if (!choice.trim().equals("1")) {
+                System.out.println("Invalid choice. Please enter 1 or 2.");
+                continue;
             }
 
-        } while (phrase != null && !phrase.isEmpty());
+            System.out.print("Print search phrase: ");
+            String phrase = in.readLine();
+            if (phrase == null) break;
+            phrase = phrase.trim().toLowerCase();
+
+            if (phrase.isEmpty()) continue;
+
+            // Boolean Model
+            System.out.println("Boolean Model result = \n" + index.find_24_01(phrase));
+
+            // Query Vector + Cosine Similarity
+            HashMap<String, Double> qVec = index.queryToVector(phrase);
+            HashMap<Integer, Double> scores = index.computeCosineSimilarity(qVec);
+            List<Map.Entry<Integer, Double>> ranked = index.rankTopK(scores, 10);
+
+            System.out.println("Cosine Similarity Results:");
+            int rank = 1;
+            for (Map.Entry<Integer, Double> entry : ranked) {
+                int docId = entry.getKey();
+                double score = entry.getValue();
+                if (score <= 0) continue;
+                System.out.println(
+                    rank + ". " +
+                    "DocID: " + docId +
+                    " | Score: " + score +
+                    " | Title: " + index.sources.get(docId).title +
+                    " | URL: " + index.sources.get(docId).URL
+                );
+                rank++;
+            }
+        }
 
         System.out.println("Goodbye!");
         in.close();

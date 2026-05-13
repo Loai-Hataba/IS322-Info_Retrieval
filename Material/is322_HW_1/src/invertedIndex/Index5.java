@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package invertedIndex;
 
 import java.io.BufferedReader;
@@ -25,16 +22,15 @@ import java.util.ArrayList;
  */
 public class Index5 {
 
-    //--------------------------------------------
+    
     int N = 0;
     public Map<Integer, SourceRecord> sources;  // store the doc_id and the file name.
 
     public HashMap<String, DictEntry> index; // THe inverted index
 
-    // HW2 fields
     public HashMap<String, Double> idfMap = new HashMap<>();
     public HashMap<Integer, HashMap<String, Double>> docVectors = new HashMap<>();
-    //--------------------------------------------
+        
 
     public Index5() {
         sources = new HashMap<Integer, SourceRecord>();
@@ -46,7 +42,7 @@ public class Index5 {
     }
 
 
-    //---------------------------------------------
+    
     /**
      * Prints a posting list in the format [docId1,docId2,...,docIdN].
      * Commas are placed ONLY between elements — there is no trailing comma
@@ -65,7 +61,7 @@ public class Index5 {
         }
         System.out.println("]");
     }
-    //---------------------------------------------
+    
     /**
      * Prints the entire inverted index dictionary to standard output.
      * For every term it shows: the term, its document frequency (how many
@@ -84,7 +80,6 @@ public class Index5 {
         System.out.println("*** Number of terms = " + index.size());
     }
  
-    //-----------------------------------------------
     /**
      * Builds the inverted index from an array of file paths.
      * Each file is assigned a unique integer document ID (fid) starting at 0.
@@ -116,7 +111,7 @@ public class Index5 {
             fid++;
         }
     }
-    //----------------------------------------------------------------------------  
+    
 
     /**
      * Indexes a single line of text from a document into the inverted index.
@@ -179,7 +174,7 @@ public class Index5 {
         }
         return flen;
     }
-//----------------------------------------------------------------------------  
+      
     /**
      * Determines whether a word is a stop word that should be excluded from
      * the index. Stop words are common function words that carry little
@@ -203,7 +198,7 @@ public class Index5 {
         return false;
 
     }
-//----------------------------------------------------------------------------  
+      
 
     /**
      * Applies stemming to reduce a word to its root form.
@@ -222,7 +217,7 @@ public class Index5 {
 //        return s.toString();
     }
 
-    //----------------------------------------------------------------------------  
+      
  /**
      * Intersects two positional posting lists to evaluate a phrase query.
      * Uses two-pointer logic at the document level, and nested two-pointer 
@@ -390,8 +385,7 @@ public class Index5 {
         return words;
     }
 
-     //---------------------------------
-
+     
     /**
      * Persists the current in-memory index to a flat text file on disk.
      * The file format has two sections separated by the marker line "section2":
@@ -444,7 +438,6 @@ public class Index5 {
             e.printStackTrace();
         }
     }
-//=========================================    
     /**
      * Checks whether a previously saved index file exists on disk.
      *
@@ -459,7 +452,6 @@ public class Index5 {
         return false;
             
     }
-//----------------------------------------------------    
     /**
      * Creates an empty index storage file containing only the "end" marker.
      * This is used to initialise a blank store before the first index is built,
@@ -478,7 +470,7 @@ public class Index5 {
             e.printStackTrace();
         }
     }
-//----------------------------------------------------      
+      
     /**
      * Loads a previously saved index from disk back into memory.
      * Parses both sections of the storage file produced by {@link #store(String)}:
@@ -544,13 +536,6 @@ public class Index5 {
         return index;
     }
 
-    // ==================================================================
-    // HW2 METHODS
-    // ==================================================================
-
-    // ---------------------------------------------------------------
-    // PERSON 2 – Build index from in-memory web documents
-    // ---------------------------------------------------------------
     /**
      * Indexes a list of SourceRecord objects obtained from the web crawler.
      * Each record's text is split into lines and fed into indexOneLine.
@@ -569,9 +554,6 @@ public class Index5 {
         }
     }
 
-    // ---------------------------------------------------------------
-    // PERSON 3 – IDF and Document Norms
-    // ---------------------------------------------------------------
     /**
      * Computes IDF for every term in the index: idf = log10(N / doc_freq).
      * Results are stored in idfMap.
@@ -621,9 +603,7 @@ public class Index5 {
         }
     }
 
-    // ---------------------------------------------------------------
-    // PERSON 4 – TF-IDF Document Vectors
-    // ---------------------------------------------------------------
+   
     /**
      * Builds a TF-IDF weight vector for every document.
      * For each term, for each posting (docId, dtf): weight = dtf * idf[term].
@@ -631,7 +611,6 @@ public class Index5 {
      * Must be called AFTER computeIDF.
      */
     public void computeDocVectors() {
-        // TODO: Person 4 – iterate index entries, compute weight = dtf * idfMap.get(term),
         // iterate over all terms in the index
         for(Map.Entry<String,DictEntry> entry: index.entrySet()){
             String term = entry.getKey();
@@ -658,11 +637,7 @@ public class Index5 {
             }
         }
     }
-
-    // ---------------------------------------------------------------
-    // PERSON 5 – Query Vectorization and Cosine Similarity
-    // ---------------------------------------------------------------
-    /**
+/**
      * Converts a query string into a TF-IDF weight vector.
      * Tokenize, lowercase, skip stop words, apply stemming, then
      * weight = tf_in_query * idf[term].
@@ -711,5 +686,3 @@ public class Index5 {
     }
 
 }
-
-//=====================================================================
