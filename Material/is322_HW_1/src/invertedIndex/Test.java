@@ -100,6 +100,8 @@ public class Test {
                     int docId = entry.getKey();
                     double score = entry.getValue();
 
+                    if (score <= 0) continue;
+
                     System.out.println(
                         rank + ". " +
                         "DocID: " + docId +

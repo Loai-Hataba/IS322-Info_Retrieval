@@ -95,23 +95,7 @@ public class WebCrawlerWithDepth {
     }
 
     // ---------------------------------------------------------------
-    // PERSON 6 – Integration & Ranking
-    // ---------------------------------------------------------------
-    /**
-     * Ranks scores map descending and returns the top-k entries.
-     *
-     * @param scores Map of docId → cosine similarity score.
-     * @param k      Number of top results to return.
-     * @return Sorted list of (docId, score) entries, highest first.
-     */
-    public List<Map.Entry<Integer, Double>> rankTopK(
-            Map<Integer, Double> scores, int k) {
-        // TODO: Person 6 – sort scores map descending, return top-k entries
-        return new ArrayList<>();
-    }
-
-    // ---------------------------------------------------------------
-    // MAIN – Wire the full HW2 pipeline (Person 6 fills this in)
+    // MAIN – Wire the full HW2 pipeline
     // ---------------------------------------------------------------
     public static void main(String[] args) throws Exception {
         WebCrawlerWithDepth app = new WebCrawlerWithDepth();
@@ -143,11 +127,12 @@ public class WebCrawlerWithDepth {
 
             HashMap<String, Double> qVec = index.queryToVector(query);
             HashMap<Integer, Double> scores = index.computeCosineSimilarity(qVec);
-            List<Map.Entry<Integer, Double>> topK = app.rankTopK(scores, TOP_K);
+            List<Map.Entry<Integer, Double>> topK = index.rankTopK(scores, TOP_K);
 
             System.out.println("Top " + TOP_K + " results:");
             int rank = 1;
             for (Map.Entry<Integer, Double> e : topK) {
+                if (e.getValue() <= 0) continue;
                 SourceRecord sr = index.sources.get(e.getKey());
                 System.out.printf("  %2d. [doc %d] score=%.4f  %s%n",
                         rank++, e.getKey(), e.getValue(), sr.title);
