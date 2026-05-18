@@ -30,6 +30,7 @@ Material/
 Builds an **inverted index** over a local directory of text files and supports keyword search.
 
 **Tasks completed:**
+
 - `intersect(Posting, Posting)` — positional posting list intersection for phrase queries
 - `buildIndex(String[] files)` — indexes all `.txt` files in a directory
 - `printPostingList(Posting)` — prints posting list without trailing comma
@@ -43,6 +44,7 @@ Builds an **inverted index** over a local directory of text files and supports k
 Extends HW1 with a **web crawler** and **cosine similarity ranking**.
 
 **Pipeline:**
+
 1. **Crawl** — BFS crawl of Wikipedia starting from `List_of_pharaohs`, up to 10 pages (jsoup)
 2. **Index** — Build inverted index from crawled pages (`buildIndexFromWeb`)
 3. **IDF** — Compute `idf = log10(N / doc_freq)` for each term
@@ -57,10 +59,12 @@ Extends HW1 with a **web crawler** and **cosine similarity ranking**.
 ## How to Run
 
 ### Prerequisites
+
 - Java 17+ with `javac` on PATH (e.g. `/usr/lib/jvm/java-17-temurin-jdk/bin/javac`)
 - `lib/jsoup-1.17.2.jar` present in the project
 
 ### Compile
+
 ```bash
 cd Material/is322_HW_1
 mkdir -p out
@@ -71,6 +75,7 @@ mkdir -p out
 ```
 
 ### Run
+
 ```bash
 /usr/lib/jvm/java-17-temurin-jdk/bin/java \
   -cp out:lib/jsoup-1.17.2.jar \
@@ -78,6 +83,7 @@ mkdir -p out
 ```
 
 ### Usage
+
 After the index is built and the dictionary is printed, an interactive menu appears:
 
 ```
